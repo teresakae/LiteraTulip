@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>See All Products - LiteraTulip</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" />
+    <style>
+      body {
+        background-color: #f8f0e3;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      .container {
+        margin-top: 50px;
+        background-color: #fff;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        margin-bottom: 30px;
+        color: #e91e63;
+        font-size: 2.5em;
+      }
+
+      table {
+        margin-top: 20px;
+      }
+
+      .btn-custom {
+        padding: 15px 30px;
+        font-size: 18px;
+        background-color: #e77471;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.3s ease;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .btn-custom:hover {
+        background-color: #45a049;
+        color: white;
+        transform: translateY(-3px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+      }
+
+      .credit {
+        font-size: 1em;
+        color: #776e65;
+        margin-top: 20px;
+        text-align: center;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h1 class="text-center"><strong>All Products</strong></h1>
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Product Name</th>
+            <th scope="col">Product Price</th>
+            <th scope="col">Product Stock</th>
+          </tr>
+        </thead>
+        <tbody id="productTableBody"></tbody>
+      </table>
+      <br />
+      <div class="text-center">
+        <a href="admin-dashboard.html" class="btn btn-secondary btn-back">Back to Home</a>
+      </div>
+    </div>
+    <script>
+      async function fetchAllProducts() {
+        try {
+          const response = await fetch("http://localhost:3000/api/product");
+          const products = await response.json();
+          const productTableBody = document.getElementById("productTableBody");
+
+          productTableBody.innerHTML = "";
+
+          products.forEach((product, index) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                        <th scope="row">${index + 1}</th>
+                        <td>${product.nama}</td>
+                        <td>Rp. ${product.harga}</td>
+                        <td>${product.stok}</td>
+                    `;
+            productTableBody.appendChild(row);
+          });
+        } catch (error) {
+          console.error("Error fetching products:", error);
+        }
+      }
+      document.addEventListener("DOMContentLoaded", () => {
+        fetchAllProducts();
+      });
+    </script>
+    <div class="credit">© Regu Tulip_ARKA (Alexa, Runi, Kae, Andrew)</div>
+  </body>
+</html>

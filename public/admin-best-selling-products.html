@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Best Selling Products - LiteraTulip</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      body {
+        background-color: #f8f0e3;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+      .container {
+        margin-top: 50px;
+        background-color: #fff;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        margin-bottom: 30px;
+        color: #e91e63;
+        font-size: 2.5em;
+      }
+      canvas {
+        max-width: 100%;
+        height: auto;
+      }
+      .credit {
+        font-size: 1em;
+        color: #776e65;
+        margin-top: 20px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="text-center"><strong>Best Selling Products</strong></h1>
+      <canvas id="bestSellingChart"></canvas>
+      <br />
+      <div class="text-center">
+        <a href="admin-dashboard.html" class="btn btn-secondary btn-back">Back to Home</a>
+      </div>
+    </div>
+    <script>
+      async function fetchBestSellingProducts() {
+        try {
+          const response = await fetch("http://localhost:3000/api/best-selling-products");
+          const bestSellingProducts = await response.json();
+          const labels = bestSellingProducts.map((product) => product.nama);
+          const data = bestSellingProducts.map((product) => product.totalSold);
+          const ctx = document.getElementById("bestSellingChart").getContext("2d");
+          const bestSellingChart = new Chart(ctx, {
+            type: "bar",
+            data: {
+              labels: labels,
+              datasets: [
+                {
+                  label: "Total Sold",
+                  data: data,
+                  backgroundColor: "rgba(75, 192, 192, 0.6)",
+                  borderColor: "rgba(75, 192, 192, 1)",
+                  borderWidth: 1,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              scales: {
+                y: {
+                  beginAtZero: true,
+                },
+              },
+            },
+          });
+        } catch (error) {
+          console.error("Error fetching best selling products:", error);
+        }
+      }
+      document.addEventListener("DOMContentLoaded", () => {
+        fetchBestSellingProducts();
+      });
+    </script>
+    <div class="credit">© Regu Tulip_ARKA (Alexa, Runi, Kae, Andrew)</div>
+    <br />
+  </body>
+</html>

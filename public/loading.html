@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Loading... LiteraTulip</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f4f4f4;
+      margin: 0;
+    }
+
+    .loading-container {
+      text-align: center;
+    }
+
+    .loader {
+      border: 8px solid #f3f3f3;
+      border-top: 8px solid #3498db;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      font-size: 1.2em;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="loading-container">
+    <div class="loader"></div>
+    <p class="loading-text">Processing Payment...</p>
+  </div>
+
+  <script>
+    setTimeout(() => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const transactionId = urlParams.get("transactionId");
+      if (transactionId) {
+        window.location.href = `/payment?transactionId=${transactionId}`;
+      } else {
+        window.location.href = "/payment";
+      }
+    }, 3000);
+  </script>
+</body>
+</html>

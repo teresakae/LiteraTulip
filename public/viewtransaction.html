@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>View Transactions</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" />
+    <style>
+      body {
+        background-color: #f8f0e3;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      .container {
+        margin-top: 50px;
+        background-color: #fff;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        margin-bottom: 30px;
+        color: #e91e63;
+        font-size: 2.5em;
+      }
+
+      .table th {
+        background-color: #f1f1f1;
+      }
+
+      .product-list {
+        list-style: none;
+        padding-left: 0;
+        margin-bottom: 0;
+      }
+
+      .product-list-item {
+        margin-bottom: 4px;
+      }
+
+      .btn-back {
+        padding: 15px 30px;
+        font-size: 18px;
+        background-color: #e77471;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.3s ease;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .credit {
+        font-size: 1em;
+        color: #776e65;
+        margin-top: 20px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="text-center"><strong>Your Transactions</strong></h1>
+      <table class="table table-bordered text-center">
+        <thead>
+          <tr>
+            <th>Transaction ID</th>
+            <th>Products</th>
+            <th>Payment Method</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="transactionTableBody">
+          <tr>
+            <td colspan="5">Loading...</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="text-center">
+        <a href="home.html" class="btn btn-secondary btn-back">Back to Home</a>
+      </div>
+    </div>
+
+    <script>
+      async function loadTransactions() {
+        try {
+          const res = await fetch("/api/transaksi/user");
+          const data = await res.json();
+
+          const tableBody = document.getElementById("transactionTableBody");
+          tableBody.innerHTML = "";
+
+          if (!data.length) {
+            tableBody.innerHTML = '<tr><td colspan="5">No transactions found.</td></tr>';
+            return;
+          }
+
+          data.forEach((tx) => {
+            const row = document.createElement("tr");
+
+            let formattedDate = "-";
+            if (tx.tanggalTransaksi) {
+              const parsedDate = new Date(tx.tanggalTransaksi);
+              formattedDate = isNaN(parsedDate.getTime()) ? "-" : parsedDate.toLocaleDateString();
+            }
+
+            const productList =
+              tx.items && tx.items.length
+                ? `<ul class="product-list">
+                            ${tx.items
+                              .map(
+                                (item) => `
+                                <li class="product-list-item">${item.produk?.nama || "Unnamed Product"} (x${item.quantity})</li>
+                            `
+                              )
+                              .join("")}
+                           </ul>`
+                : "N/A";
+
+            row.innerHTML = `
+                        <td>${tx._id}</td>
+                        <td>${productList}</td>
+                        <td>${tx.paymentOption || "-"}</td>
+                        <td>
+                            ${tx.orderStatus === "Pending Payment" ? `<a href="/payment.html?transactionId=${tx._id}">${tx.orderStatus}</a>` : tx.orderStatus || "-"}
+                        </td>
+                        <td>${formattedDate}</td>
+                    `;
+            tableBody.appendChild(row);
+          });
+        } catch (err) {
+          console.error(err);
+          document.getElementById("transactionTableBody").innerHTML = '<tr><td colspan="5">Error loading transactions.</td></tr>';
+        }
+      }
+      loadTransactions();
+    </script>
+    <div class="credit">© Regu Tulip_ARKA (Alexa, Runi, Kae, Andrew)</div>
+    <br />
+  </body>
+</html>

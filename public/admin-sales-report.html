@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sales Report - LiteraTulip</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" />
+    <style>
+      body {
+        background-color: #f8f0e3;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      .container {
+        margin-top: 50px;
+        background-color: #fff;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        margin-bottom: 30px;
+        color: #e91e63;
+        font-size: 2.5em;
+      }
+
+      table {
+        margin-top: 20px;
+        border-collapse: collapse;
+        width: 100%;
+        border: 1px solid #ddd;
+      }
+
+      table thead th {
+        background-color: #e9ecef;
+        color: #212529;
+        padding: 12px;
+        text-align: center;
+        border-bottom: 2px solid #ddd;
+      }
+
+      table tbody tr {
+        background-color: #ffffff;
+      }
+
+      table tbody tr:nth-child(even) {
+        background-color: #f8f9fa;
+      }
+
+      table tbody td {
+        padding: 12px;
+        border-bottom: 1px solid #ddd;
+      }
+
+      table tfoot tr {
+        font-weight: bold;
+        background-color: #e9ecef;
+      }
+
+      #generateReport {
+        margin-top: 10px;
+      }
+
+      .no-data {
+        text-align: center;
+        color: #6c757d;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        margin-top: 10px;
+      }
+
+      .product-list {
+        list-style: none;
+        padding-left: 0;
+        margin-bottom: 0;
+      }
+
+      .product-list-item {
+        margin-bottom: 5px;
+      }
+
+      #reportType,
+      #weeklyOptions {
+        margin-bottom: 10px;
+      }
+
+      #totalRow {
+        font-weight: bold;
+        background-color: #e9ecef;
+      }
+
+      #exportOptions {
+        margin-top: 20px;
+        display: flex;
+        justify-content: center;
+      }
+
+      #exportOptions button {
+        margin: 0 10px;
+      }
+
+      .credit {
+        font-size: 1em;
+        color: #776e65;
+        margin-top: 20px;
+        text-align: center;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h1 class="text-center"><strong>Sales Report</strong></h1>
+      <div class="mb-3">
+        <label for="reportType" class="form-label">Select Report Type:</label>
+        <select id="reportType" class="form-select">
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="all">All</option>
+        </select>
+        <div id="weeklyOptions" style="display: none">
+          <label for="weeklyStart" class="form-label">Start Date:</label>
+          <input type="date" id="weeklyStart" class="form-control" />
+          <label for="weeklyEnd" class="form-label">End Date:</label>
+          <input type="date" id="weeklyEnd" class="form-control" />
+        </div>
+        <button id="generateReport" class="btn btn-primary">Generate Report</button>
+        <br />
+        <br />
+        <div>
+          <a href="admin-dashboard.html" class="btn btn-secondary btn-back">Back to Home</a>
+        </div>
+      </div>
+      <div id="report-table-container" style="display: none">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Transaction ID</th>
+              <th scope="col">User</th>
+              <th scope="col">Products</th>
+              <th scope="col">Total Amount</th>
+              <th scope="col">Payment Method</th>
+              <th scope="col">Payment Status</th>
+              <th scope="col">Date</th>
+            </tr>
+          </thead>
+          <tbody id="salesReportTableBody"></tbody>
+          <tfoot id="reportTableFooter">
+            <tr id="totalRow">
+              <th colspan="4">Total Earnings</th>
+              <td id="totalEarnings">Rp. 0</td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+        <div id="noDataMessage" class="no-data" style="display: none">No data available for the selected report type.</div>
+      </div>
+      <div id="exportOptions" style="display: none">
+        <button id="exportExcel" class="btn btn-success">Export to Excel</button>
+      </div>
+    </div>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <script>
+      async function fetchSalesReport(reportType, startDate = null, endDate = null) {
+        try {
+          let url = `http://localhost:3000/api/transaksi?type=${reportType}`;
+          if (startDate && endDate) {
+            url += `&startDate=${startDate}&endDate=${endDate}`;
+          }
+
+          const response = await fetch(url);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const transactions = await response.json();
+          const salesReportTableBody = document.getElementById("salesReportTableBody");
+          const reportTableContainer = document.getElementById("report-table-container");
+          const noDataMessage = document.getElementById("noDataMessage");
+          const totalEarningsElement = document.getElementById("totalEarnings");
+          const exportOptionsDiv = document.getElementById("exportOptions");
+
+          salesReportTableBody.innerHTML = "";
+          let hasData = false;
+          let totalEarnings = 0;
+          let tableData = [];
+
+          if (transactions.length === 0) {
+            reportTableContainer.style.display = "none";
+            noDataMessage.style.display = "block";
+            totalEarningsElement.textContent = "Rp. 0";
+            exportOptionsDiv.style.display = "none";
+          } else {
+            reportTableContainer.style.display = "block";
+            noDataMessage.style.display = "none";
+            exportOptionsDiv.style.display = "flex";
+            transactions.forEach((transaction, index) => {
+              const row = document.createElement("tr");
+              const productList =
+                transaction.items && transaction.items.length > 0
+                  ? `<ul class="product-list">` +
+                    transaction.items
+                      .map((item) => (item.produk ? `<li class="product-list-item">${item.produk.nama} (x${item.quantity})</li>` : `<li class="product-list-item">Unknown Product (x${item.quantity})</li>`))
+
+                      .join("") +
+                    `</ul>`
+                  : "N/A";
+
+              const transactionDate = new Date(transaction.tanggalTransaksi);
+              const currentDate = new Date();
+
+              let displayRow = false;
+              if (reportType === "daily") {
+                displayRow = transactionDate.getFullYear() === currentDate.getFullYear() && transactionDate.getMonth() === currentDate.getMonth() && transactionDate.getDate() === currentDate.getDate();
+              } else if (reportType === "weekly") {
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                displayRow = transactionDate >= start && transactionDate <= end;
+              } else if (reportType === "all") {
+                displayRow = true;
+              }
+
+              if (displayRow) {
+                hasData = true;
+                row.innerHTML = `
+                                      <th scope="row">${index + 1}</th>
+                                      <td>${transaction._id}</td>
+                                      <td>${transaction.user ? transaction.user.username : "N/A"}</td>
+                                      <td>${productList}</td>
+                                      <td>Rp. ${transaction.totalTransaksi}</td>
+                                      <td>${transaction.paymentOption}</td>
+                                      <td>${transaction.orderStatus}</td>
+                                      <td>${transactionDate.toLocaleDateString()}</td>
+                                  `;
+                salesReportTableBody.appendChild(row);
+                totalEarnings += transaction.totalTransaksi;
+
+                tableData.push({
+                  "#": index + 1,
+                  "Transaction ID": transaction._id,
+                  User: transaction.user ? transaction.user.username : "N/A",
+                  Products: transaction.items.map((item) => (item.produk ? `${item.produk.nama} (x${item.quantity})` : `Unknown Product (x${item.quantity})`)).join(", "),
+                  "Total Amount": `Rp. ${transaction.totalTransaksi}`,
+                  "Payment Method": transaction.paymentOption,
+                  "Payment Status": transaction.orderStatus,
+                  Date: transactionDate.toLocaleDateString(),
+                });
+              }
+            });
+
+            if (!hasData) {
+              reportTableContainer.style.display = "none";
+              noDataMessage.style.display = "block";
+              noDataMessage.textContent = "No data available for the selected report type and date range.";
+              totalEarningsElement.textContent = "Rp. 0";
+              exportOptionsDiv.style.display = "none";
+            } else {
+              totalEarningsElement.textContent = `Rp. ${totalEarnings}`;
+            }
+          }
+          return tableData;
+        } catch (error) {
+          console.error("Error fetching sales report:", error);
+          const reportTableContainer = document.getElementById("report-table-container");
+          const noDataMessage = document.getElementById("noDataMessage");
+          const exportOptionsDiv = document.getElementById("exportOptions");
+          reportTableContainer.style.display = "none";
+          noDataMessage.style.display = "block";
+          noDataMessage.textContent = "Failed to fetch data. Please check your network connection or try again later.";
+          totalEarningsElement.textContent = "Rp. 0";
+          exportOptionsDiv.style.display = "none";
+          return [];
+        }
+      }
+
+      const reportTypeSelect = document.getElementById("reportType");
+      const weeklyOptionsDiv = document.getElementById("weeklyOptions");
+      const weeklyStartInput = document.getElementById("weeklyStart");
+      const weeklyEndInput = document.getElementById("weeklyEnd");
+      const exportExcelButton = document.getElementById("exportExcel");
+
+      reportTypeSelect.addEventListener("change", () => {
+        if (reportTypeSelect.value === "weekly") {
+          weeklyOptionsDiv.style.display = "block";
+        } else {
+          weeklyOptionsDiv.style.display = "none";
+        }
+      });
+
+      let reportData = [];
+      document.getElementById("generateReport").addEventListener("click", async () => {
+        const reportType = reportTypeSelect.value;
+        let startDate = null;
+        let endDate = null;
+
+        if (reportType === "daily") {
+          startDate = new Date().toISOString().split("T")[0];
+          endDate = new Date().toISOString().split("T")[0];
+        }
+
+        if (reportType === "weekly") {
+          startDate = weeklyStartInput.value;
+          endDate = weeklyEndInput.value;
+          if (!startDate || !endDate) {
+            alert("Please select both start and end dates for weekly report.");
+            return;
+          }
+          const start = new Date(startDate);
+          const end = new Date(endDate);
+          const diffInDays = Math.floor((end - start) / (1000 * 60 * 60 * 24));
+          if (diffInDays !== 6) {
+            alert("Weekly report must be for a 7-day period.");
+            return;
+          }
+        }
+        reportData = await fetchSalesReport(reportType, startDate, endDate);
+      });
+
+      exportExcelButton.addEventListener("click", () => {
+        if (reportData.length === 0) {
+          alert("No data to export.");
+          return;
+        }
+        try {
+          const worksheet = XLSX.utils.json_to_sheet(reportData);
+          const workbook = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(workbook, worksheet, "Sales Report");
+          XLSX.writeFile(workbook, "sales_report.xlsx");
+        } catch (error) {
+          console.error("Error exporting to Excel:", error);
+          alert("Failed to export to Excel. Please check console for details.");
+        }
+      });
+    </script>
+    <div class="credit">© Regu Tulip_ARKA (Alexa, Runi, Kae, Andrew)</div>
+  </body>
+</html>
