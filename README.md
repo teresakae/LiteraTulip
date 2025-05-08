@@ -1,4 +1,4 @@
-# 📚 Literatulip - Node.js Book Ordering Web App 🌷
+# 📚 LiteraTulip - Node.js Book Ordering Web App 🌷
 A simple and efficient web application built with Node.js, Express, and MongoDB that allows users to browse, order, and manage books online.
 
 ## 🚀 Features
@@ -16,11 +16,11 @@ Frontend: HTML, CSS, Bootstrap
 Authentication: Express-session
 
 ## 📂 Folder Structure
-├── models/           # Mongoose schemas (User, Admin, Produk, Transaksi) \n
-├── routes/           # Express routes \n
-├── controllers/      # Business logic \n
-├── public/           # Frontend (CSS, JS, images) \n
-├── app.js            # Main server entry point \n
+├── models/   # Mongoose schemas (User, Admin, Produk, Transaksi)  
+├── routes/   # Express routes  
+├── controllers/   # Business logic  
+├── public/   # Frontend (CSS, JS, images)  
+├── app.js    # Main server entry point  
 ├── package.json
 
 ## 🧪 Getting Started
