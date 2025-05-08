@@ -16,11 +16,11 @@ Frontend: HTML, CSS, Bootstrap
 Authentication: Express-session
 
 ## 📂 Folder Structure
-├── models/           # Mongoose schemas (User, Admin, Produk, Transaksi)
-├── routes/           # Express routes
-├── controllers/      # Business logic
-├── public/           # Frontend (CSS, JS, images)
-├── app.js            # Main server entry point
+├── models/           # Mongoose schemas (User, Admin, Produk, Transaksi) \n
+├── routes/           # Express routes \n
+├── controllers/      # Business logic \n
+├── public/           # Frontend (CSS, JS, images) \n
+├── app.js            # Main server entry point \n
 ├── package.json
 
 ## 🧪 Getting Started
