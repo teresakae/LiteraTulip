@@ -25,7 +25,7 @@ Authentication: Express-session
 ├── package.json
 
 ## 🧪 Getting Started
-git clone https://github.com/teresakae/LiteraTulip.git OR download and extract UTSPBW - ARKA (Final).zip
+git clone https://github.com/teresakae/LiteraTulip.git OR download and extract UTSPBW - ARKA (Final).zip  
 npm install
 npm start
 Visit http://localhost:3000 to explore the app.
