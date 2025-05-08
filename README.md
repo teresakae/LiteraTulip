@@ -1,6 +1,6 @@
 # 📚 LiteraTulip - Node.js Book Ordering Web App 🌷
 A simple and efficient web application built with Node.js, Express, and MongoDB that allows users to browse, order, and manage books online.
-> This web app was developed as a Midterm Project for SFT 208 - Web-based Programming Course by ARKA (Andrew, Runi, Kae, Alexa)
+> This web app was developed as a Midterm Project for SFT 208 - Web-based Programming Course by ARKA (Andrew, Runi, Kae, Alexa).
 
 ## 🚀 Features
 🧾 User registration and login (with session-based authentication)
