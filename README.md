@@ -44,7 +44,7 @@ npm run start
 Visit `http://localhost:3000/start.html` to **explore the app as a User**  
 or `http://localhost:3000/admin-login.html` **as an Admin**
 
-✅ Future Improvements
+## ✅ Future Improvements
 * More book attributes (descriptions, category, authors, publishers, etc.)  
 * Integration with real payment gateways  
 * Search features, more dynamic UI, filtering
