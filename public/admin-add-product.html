@@ -66,15 +66,19 @@
   <body>
     <div class="container">
       <h1 class="text-center"><strong>Add New Product</strong></h1>
-      <form id="addProductForm">
+      <form id="addProductForm" enctype="multipart/form-data">
         <div class="mb-3">
-          <input type="text" id="productName" class="form-control" placeholder="Product Name" required />
+          <input type="text" id="productName" name="nama" class="form-control" placeholder="Product Name" required />
         </div>
         <div class="mb-3">
-          <input type="number" id="productPrice" class="form-control" placeholder="Product Price" required />
+          <input type="number" id="productPrice" name="harga" class="form-control" placeholder="Product Price" required />
         </div>
         <div class="mb-3">
-          <input type="number" id="productStock" class="form-control" placeholder="Product Stock" required />
+          <input type="number" id="productStock" name="stok" class="form-control" placeholder="Product Stock" required />
+        </div>
+        <div class="mb-3">
+            <label for="productImage" class="form-label">Product Image</label>
+            <input class="form-control" type="file" id="productImage" name="productImage" accept="image/*" required>
         </div>
         <button type="submit" class="btn btn-custom w-100">Add Product</button>
         <br />

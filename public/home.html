@@ -1,116 +1,127 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <title>Dashboard - LiteraTulip</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" />
     <style>
-      body {
-        background-color: #f8f0e3;
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      }
+        body {
+            background-color: #f8f0e3;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container {
+            margin-top: 80px;
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+        }
+        h1 {
+            margin-bottom: 30px;
+            color: #e91e63;
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+        .btn-lg {
+            width: 100%;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            color: white;
+        }
+        .btn-browse {
+            background-color: #f48fb1;
+        }
+        .btn-browse:hover {
+            background-color: #ec6f99;
+        }
 
-      .container {
-        margin-top: 80px;
-        background-color: #fff;
-        padding: 40px;
-        border-radius: 12px;
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
-        max-width: 600px;
-      }
+        .btn-transactions {
+            background-color: #9575cd;
+        }
+        .btn-transactions:hover {
+            background-color: #7e57c2;
+        }
 
-      h1 {
-        margin-bottom: 30px;
-        color: #e91e63;
-        font-size: 2.5em;
-      }
+        .btn-discussion {
+            background-color: #4db6ac;
+        }
+        .btn-discussion:hover {
+            background-color: #009688;
+        }
 
-      .btn-lg {
-        width: 100%;
-        margin-bottom: 15px;
-        border-radius: 8px;
-      }
+        .btn-support {
+            background-color: #ffb74d;
+            color: #4e342e;
+        }
+        .btn-support:hover {
+            background-color: #ffa726;
+            color: #3e2723;
+        }
 
-      .btn-primary {
-        background-color: #4caf50;
-        border: none;
-      }
+        .btn-logout {
+            background-color: #ef5350;
+        }
+        .btn-logout:hover {
+            background-color: #e53935;
+        }
 
-      .btn-primary:hover {
-        background-color: #45a049;
-      }
-
-      .btn-secondary {
-        background-color: #007bff;
-      }
-
-      .btn-secondary:hover {
-        background-color: #0056b3;
-      }
-
-      .btn-danger {
-        background-color: #e74c3c;
-      }
-
-      .btn-danger:hover {
-        background-color: #c0392b;
-      }
-
-      .credit {
-        font-size: 1em;
-        color: #776e65;
-        margin-top: 20px;
-        text-align: center;
-      }
+        .credit {
+            font-size: 1em;
+            color: #776e65;
+            margin-top: 20px;
+            text-align: center;
+        }
     </style>
-  </head>
-
-  <body>
+</head>
+<body>
     <div class="container text-center">
-      <h1 id="greeting">Hello, User</h1>
-
-      <button class="btn btn-primary btn-lg" onclick="location.href='add-product.html'">Browse Products</button>
-      <button class="btn btn-secondary btn-lg" onclick="location.href='viewtransaction.html'">View Transactions</button>
-      <button class="btn btn-danger btn-lg" onclick="logout()">Logout</button>
+        <h1 id="greeting">Hello, User!</h1>
+        <button class="btn btn-browse btn-lg" onclick="location.href='view-product.html'">Browse Products</button>
+        <button class="btn btn-transactions btn-lg" onclick="location.href='viewtransaction.html'">View Transactions</button>
+        <button id="chat-button" class="btn btn-discussion btn-lg" style="display: none;" onclick="location.href='group-chat.html'">Discussion Room</button>
+        <button class="btn btn-support btn-lg" onclick="location.href='customer-service.html'">Customer Service</button>
+        <button class="btn btn-logout btn-lg" onclick="logout()">Logout</button>
     </div>
 
     <script>
-      async function fetchUserInfo() {
-        try {
-          const response = await fetch("http://localhost:3000/api/check-login");
-          const data = await response.json();
-          console.log("Response data:", data);
+        async function fetchUser() {
+            try {
+                const response = await fetch("http://localhost:3000/api/check-login");
+                const data = await response.json();
+                console.log("Response data:", data);
 
-          if (data && data.isLoggedIn && data.user) {
-            document.getElementById("greeting").textContent = `Hello, ${data.user.name || "User"}`;
-          } else {
-            document.getElementById("greeting").textContent = "Hello, Guest";
-          }
-        } catch (error) {
-          console.error("Could not fetch user info:", error);
-        }
-      }
-
-      fetchUserInfo();
-
-      function logout() {
-        fetch("/api/logout", {
-          method: "POST",
-          credentials: "include",
-        })
-          .then((res) => {
-            if (res.ok) {
-              window.location.href = "start.html";
-            } else {
-              alert("Logout failed");
+                if (data && data.isLoggedIn && data.user) {
+                    document.getElementById("greeting").textContent = `Hello, ${data.user.name || "User"}!`;
+                    document.getElementById("chat-button").style.display = "block";
+                } else {
+                    document.getElementById("greeting").textContent = "Hello, Guest";
+                }
+            } catch (error) {
+                console.error("Could not fetch user info:", error);
             }
-          })
-          .catch((error) => {
-            console.error("Logout error:", error);
-            alert("An error occurred during logout.");
-          });
-      }
+        }
+
+        fetchUser();
+
+        function logout() {
+            fetch("/api/logout", {
+                method: "POST",
+                credentials: "include",
+            })
+            .then((res) => {
+                if (res.ok) {
+                    window.location.href = "start.html";
+                } else {
+                    alert("Logout failed");
+                }
+            })
+            .catch((error) => {
+                console.error("Logout error:", error);
+                alert("An error occurred during logout.");
+            });
+        }
     </script>
     <div class="credit">© Regu Tulip_ARKA (Alexa, Runi, Kae, Andrew)</div>
-  </body>
+</body>
 </html>

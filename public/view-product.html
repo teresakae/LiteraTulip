@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>View Products - LiteraTulip</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css" />
+  <style>
+    body {
+      background-color: #fef9f4;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .product-card {
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      overflow: hidden;
+      transition: transform 0.2s;
+      background-color: white;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .product-card:hover {
+      transform: scale(1.03);
+    }
+    .product-img {
+      width: 100%;
+      aspect-ratio: 3 / 4; 
+      object-fit: cover;   
+    }
+    .card-body-custom {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+    }
+    .card-body-custom h5 {
+      flex-grow: 1;
+      font-weight: bold;
+    }
+    .btn-add {
+      background-color: #e77471;
+      color: white;
+      border: none;
+      border-radius: 8px;
+    }
+    .btn-add:hover {
+      background-color: #d66562; 
+    }
+    h1 {
+      color: #e91e63;
+      margin: 20px 0;
+      text-align: center;
+      font-weight: bold; 
+    }
+
+    /* --- START: CSS CHANGES --- */
+
+    /* 1. Style for the sticky "Go to Cart" button */
+    #cart-link {
+        position: fixed; /* Makes the button stay in place */
+        top: 20px;
+        right: 20px;
+        z-index: 1030; /* Ensures it's above other content */
+        background-color: #45a049; 
+        border-color: #45a049;
+        color: white;
+        border-radius: 50px; /* Makes it a pill shape */
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    #cart-link:hover {
+        background-color: #3e8e41; 
+        border-color: #3e8e41;
+    }
+    #cart-count {
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        background-color: #e91e63;
+        color: white;
+        border-radius: 50%;
+        padding: 2px 8px;
+        font-size: 12px;
+    }
+
+    /* --- END: CSS CHANGES --- */
+
+    .alert-custom {
+      display: none;
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      width: 90%;
+      max-width: 400px;
+    }
+  </style>
+</head>
+<body>
+  <a href="cart.html" id="cart-link" class="btn">
+    <i class="bi bi-cart-fill"></i> Go to Cart
+    <span id="cart-count">0</span>
+  </a>
+
+  <div class="container mt-4">
+    <h1>All Products</h1>
+    <div class="row" id="productGrid"></div>
+
+    <div
+      id="homeLinkContainer"
+      class="text-center mt-3"
+    >
+      <a href="home.html" class="btn btn-outline-secondary">Return to Home</a>
+    </div>
+  </div>
+
+  <div id="alertMessage" class="alert alert-custom" role="alert"></div>
+
+<script>
+    const productGrid = document.getElementById("productGrid");
+    const cartCount = document.getElementById("cart-count");
+
+    // RESTORED THIS FUNCTION
+    function showCustomAlert(message, type) {
+      const alertElement = document.getElementById('alertMessage');
+      alertElement.textContent = message;
+      alertElement.className = `alert alert-${type} alert-custom`;
+      alertElement.style.display = 'block';
+      setTimeout(() => {
+        alertElement.style.display = 'none';
+      }, 3000);
+    }
+
+    // RESTORED THIS FUNCTION
+    function addToCart(product) {
+      let cart = JSON.parse(localStorage.getItem("cart")) || [];
+      const existingProduct = cart.find(item => item.produk === product._id);
+
+      if (existingProduct) {
+        existingProduct.quantity++;
+      } else {
+        cart.push({
+          produk: product._id,
+          name: product.nama,
+          price: product.harga,
+          quantity: 1
+        });
+      }
+      
+      localStorage.setItem("cart", JSON.stringify(cart));
+      updateCartCount();
+      showCustomAlert(`'${product.nama}' has been added to your cart!`, 'success');
+    }
+    
+    // RESTORED THIS FUNCTION
+    function updateCartCount() {
+        const cart = JSON.parse(localStorage.getItem("cart")) || [];
+        const totalQuantity = cart.reduce((total, item) => total + item.quantity, 0);
+        cartCount.textContent = totalQuantity;
+    }
+
+    async function fetchProducts() {
+      try {
+        const res = await fetch("http://localhost:3000/api/products");
+        const products = await res.json();
+        
+        productGrid.innerHTML = ''; 
+
+        products.forEach(product => {
+          const col = document.createElement("div");
+          col.className = "col-md-3 mb-4";
+          
+          const card = document.createElement("div");
+          card.className = "product-card";
+
+          card.innerHTML = `
+              <img src="${product.gambar || 'https://via.placeholder.com/300'}" class="product-img" alt="${product.nama}" />
+              <div class="card-body-custom">
+                <h5>${product.nama}</h5>
+                <p class="text-muted">Rp ${product.harga.toLocaleString()}</p>
+                <p>Stock: ${product.stok}</p>
+              </div>
+          `;
+
+          const addButton = document.createElement('button');
+          addButton.className = 'btn btn-add mx-auto mb-3';
+          addButton.textContent = 'Add to Cart';
+          addButton.onclick = () => addToCart(product); // This now works because the function exists
+
+          card.appendChild(addButton);
+          col.appendChild(card);
+          productGrid.appendChild(col);
+        });
+      } catch (error) {
+        console.error("Failed to load products:", error);
+        productGrid.innerHTML = '<p class="text-center text-danger">Could not load products. Please try again later.</p>';
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        fetchProducts();
+        updateCartCount();
+    });
+</script>
+</body>
+</html>

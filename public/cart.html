@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Cart - LiteraTulip</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" />
+    <style>
+      body {
+        background-color: #fef9f4;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+      .container {
+        margin-top: 50px;
+        background-color: #fff;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+      .table th, .table td {
+        vertical-align: middle;
+        text-align: center;
+      }
+      .table th { background-color: #f1f1f1; }
+      h1 {
+        color: #e91e63;
+        margin-bottom: 30px;
+        text-align: center;
+        font-weight: bold;
+      }
+      .btn-custom {
+        padding: 15px 30px;
+        font-size: 18px;
+        background-color: #e77471;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.3s ease;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+      .btn-custom:hover {
+        background-color: #d66562;
+        color: white;
+        transform: translateY(-3px);
+      }
+      .btn-danger { background-color: #e74c3c; }
+      .btn-danger:hover { color: white; background-color: #c0392b; }
+      #discountRow td { font-weight: bold; color: #28a745; }
+      .quantity-input { width: 70px; text-align: center; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Your Cart</h1>
+      <div id="cartContent">
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th>Product Name</th>
+              <th>Price</th>
+              <th>Quantity</th>
+              <th>Total</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="cartTableBody"></tbody>
+          <tfoot>
+            <tr id="discountRow" style="display: none">
+              <td colspan="3" class="text-end fw-bold">Discount:</td>
+              <td id="cartDiscount" class="fw-bold">Rp 0</td>
+              <td></td>
+            </tr>
+            <tr id="totalRow" style="display: none">
+              <td colspan="3" class="text-end fw-bold">Total After Discount:</td>
+              <td id="cartTotal" class="fw-bold">Rp 0</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+        <div class="d-grid gap-2 mt-3">
+          <button type="button" id="submitOrderButton" class="btn btn-custom w-100">Submit Order</button>
+        </div>
+      </div>
+      <div id="emptyCartMessage" class="text-center" style="display: none;">
+        <h3>Your cart is empty.</h3>
+        <p>Looks like you haven't added anything to your cart yet.</p>
+      </div>
+      <br />
+      <div class="text-center">
+        <a href="view-product.html" class="btn btn-secondary">Back to Products</a>
+      </div>
+    </div>
+
+    <script>
+      const cartTableBody = document.getElementById("cartTableBody");
+      const cartTotalRow = document.getElementById("totalRow");
+      const cartDiscountRow = document.getElementById("discountRow");
+      const cartTotalDisplay = document.getElementById("cartTotal");
+      const cartDiscountDisplay = document.getElementById("cartDiscount");
+      const submitOrderButton = document.getElementById("submitOrderButton");
+      const cartContent = document.getElementById("cartContent");
+      const emptyCartMessage = document.getElementById("emptyCartMessage");
+
+      let cart = JSON.parse(localStorage.getItem("cart")) || [];
+      let isLoggedIn = false;
+
+      async function checkLoginStatus() {
+        try {
+          const response = await fetch("http://localhost:3000/api/check-login");
+          if (response.ok) {
+            const data = await response.json();
+            isLoggedIn = data.isLoggedIn;
+          }
+        } catch (err) {
+          console.error("Login check failed", err);
+          isLoggedIn = false; // Assume not logged in on error
+        } finally {
+          renderCart(); // Render cart after checking login status
+        }
+      }
+
+      function renderCart() {
+        cartTableBody.innerHTML = "";
+        if (cart.length === 0) {
+            cartContent.style.display = 'none';
+            emptyCartMessage.style.display = 'block';
+            localStorage.setItem("cart", JSON.stringify(cart));
+            return;
+        }
+
+        cartContent.style.display = 'block';
+        emptyCartMessage.style.display = 'none';
+
+        let totalOriginalPrice = 0;
+        let totalDiscount = 0;
+
+        cart.forEach((item) => {
+          const originalTotal = item.price * item.quantity;
+          totalOriginalPrice += originalTotal;
+
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${item.name}</td>
+            <td>${formatNumber(item.price)}</td>
+            <td>
+              <input type="number" class="form-control quantity-input mx-auto" value="${item.quantity}" min="1" onchange="updateQuantity('${item.produk}', this.value)">
+            </td>
+            <td>${formatNumber(originalTotal)}</td>
+            <td>
+              <button class="btn btn-danger btn-sm" onclick="removeFromCart('${item.produk}')">Remove</button>
+            </td>
+          `;
+          cartTableBody.appendChild(row);
+        });
+
+        if (isLoggedIn) {
+          totalDiscount = calculateDiscount(totalOriginalPrice);
+          cartDiscountRow.style.display = "";
+          cartDiscountDisplay.textContent = formatNumber(totalDiscount);
+        } else {
+          cartDiscountRow.style.display = "none";
+        }
+        cartTotalDisplay.textContent = formatNumber(totalOriginalPrice - totalDiscount);
+        cartTotalRow.style.display = "";
+        
+        localStorage.setItem("cart", JSON.stringify(cart));
+      }
+      
+      // NEW: Function to update the quantity of an item
+      function updateQuantity(productId, newQuantity) {
+        const quantity = parseInt(newQuantity, 10);
+        const productInCart = cart.find(item => item.produk === productId);
+
+        if (productInCart && quantity > 0) {
+            productInCart.quantity = quantity;
+        } else {
+            // If quantity is invalid or 0, remove the item
+            cart = cart.filter((item) => item.produk !== productId);
+        }
+        renderCart(); // Re-render the cart to update totals
+      }
+
+      function removeFromCart(productId) {
+        cart = cart.filter((item) => item.produk !== productId);
+        renderCart(); // Re-render to update the view
+      }
+
+      function calculateDiscount(total) {
+        const rate = 0.1; // 10% discount
+        const max = 50000; // Max discount of Rp 50,000
+        return Math.min(total * rate, max);
+      }
+
+      function formatNumber(num) {
+        return num.toLocaleString("id-ID", {
+          style: "currency",
+          currency: "IDR",
+          minimumFractionDigits: 0,
+        });
+      }
+
+      submitOrderButton.addEventListener("click", async () => {
+        if (cart.length === 0) {
+          alert("Cart is empty!");
+          return;
+        }
+
+        const cartToSend = cart.map((item) => ({
+          produk: item.produk,
+          quantity: item.quantity,
+        }));
+
+        try {
+          // You might need to add credentials if your server uses cookies for auth
+          const res = await fetch("http://localhost:3000/api/transaksi/submit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ cartItems: cartToSend }),
+          });
+
+          if (res.ok) {
+            const result = await res.json();
+            localStorage.removeItem("cart"); // Clear cart on successful submission
+            // Redirect to a success/loading page
+            window.location.href = `/loading?transactionId=${result.transactionId || ""}`;
+          } else {
+            const err = await res.json();
+            alert("Submit failed: " + (err.message || "Unknown error"));
+          }
+        } catch (error) {
+          console.error("Error submitting order:", error);
+          alert("An error occurred while submitting your order.");
+        }
+      });
+
+      document.addEventListener("DOMContentLoaded", checkLoginStatus);
+    </script>
+  </body>
+</html>

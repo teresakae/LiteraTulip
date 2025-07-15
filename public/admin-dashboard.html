@@ -10,7 +10,6 @@
         background-color: #f8f9fa;
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
       }
-
       .container {
         margin-top: 50px;
         background-color: #fff;
@@ -21,13 +20,12 @@
         margin-left: auto;
         margin-right: auto;
       }
-
       h1 {
         margin-bottom: 30px;
         color: #e91e63;
         font-size: 2.5em;
+        font-weight: bold;
       }
-
       .nav-link {
         display: block;
         width: 100%;
@@ -45,15 +43,13 @@
         align-items: center;
         text-decoration: none;
       }
-
       .nav-link:hover {
         background-color: #45a049;
+        color: white;
       }
-
       .nav-button-text {
         margin-left: 10px;
       }
-
       .credit {
         font-size: 1em;
         color: #776e65;
@@ -64,13 +60,19 @@
   </head>
   <body>
     <div class="container">
-      <h1 class="text-center"><strong>Admin Dashboard</strong></h1>
+      <h1 class="text-center">Admin Dashboard</h1>
       <nav>
         <a href="admin-add-product.html" class="nav-link"> ➕<span class="nav-button-text">Add New Product</span> </a>
         <a href="admin-update-product.html" class="nav-link"> ✏️<span class="nav-button-text">Update Details of Product</span> </a>
         <a href="admin-see-all-products.html" class="nav-link"> 👁️<span class="nav-button-text">See All Products</span> </a>
+        <a href="admin-transactions.html" class="nav-link"> 🧾<span class="nav-button-text">Manage All Transactions</span> </a>
         <a href="admin-sales-report.html" class="nav-link"> 📊<span class="nav-button-text">See Daily or Weekly Sales Report</span> </a>
         <a href="admin-best-selling-products.html" class="nav-link"> 🏆<span class="nav-button-text">Best Selling Products</span> </a>
+        
+        <hr>
+        <h5 class="text-center mt-4">Fitur Chat</h5>
+        <a href="admin-chat.html" class="nav-link" style="background-color: #17a2b8;"> 💬<span class="nav-button-text">Customer Service Chat</span> </a>
+        <!-- Tombol Group Chat Dihapus dari sini -->
       </nav>
     </div>
     <div class="credit">© Regu Tulip_ARKA (Alexa, Runi, Kae, Andrew)</div>

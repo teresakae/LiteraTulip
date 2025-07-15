@@ -50,7 +50,7 @@
           const response = await fetch("http://localhost:3000/api/best-selling-products");
           const bestSellingProducts = await response.json();
           const labels = bestSellingProducts.map((product) => product.nama);
-          const data = bestSellingProducts.map((product) => product.totalSold);
+          const data = bestSellingProducts.map((product) => product.jumlahTerjual);
           const ctx = document.getElementById("bestSellingChart").getContext("2d");
           const bestSellingChart = new Chart(ctx, {
             type: "bar",

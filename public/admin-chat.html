@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin - Customer Service</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f8f0e3 0%, #fef9f4 100%);
+      color: #444;
+      overflow: hidden;
+    }
+
+    .container-fluid, .row, .col-md-3, .col-md-9 {
+      height: 100vh;
+    }
+
+    .user-list {
+      backdrop-filter: blur(12px);
+      background: rgba(255, 255, 255, 0.8);
+      border-right: 1px solid rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .user-list-header {
+      padding: 1rem;
+      border-bottom: 1px solid #ddd;
+      font-weight: 600;
+    }
+
+    .list-group {
+      overflow-y: auto;
+      flex-grow: 1;
+    }
+
+    .list-group-item {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: none;
+    }
+
+    .list-group-item.active {
+      background-color: #e77471 !important;
+      color: white;
+    }
+
+    .chat-area {
+      display: flex;
+      flex-direction: column;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(15px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    }
+
+    #chat-header {
+      padding: 1rem 1.5rem;
+      font-weight: 600;
+      border-bottom: 1px solid #eee;
+    }
+
+    #messages {
+      list-style-type: none;
+      margin: 0;
+      padding: 1.5rem;
+      overflow-y: auto;
+      flex-grow: 1;
+    }
+
+    #messages li {
+      margin-bottom: 12px;
+      padding: 1rem 1.25rem;
+      border-radius: 16px;
+      max-width: 75%;
+      display: inline-block;
+      animation: fadeIn 0.2s ease;
+      border: 1px solid rgba(0,0,0,0.05);
+      clear: both;
+    }
+
+    #messages li.sent {
+      float: right;
+      background-color: #e77471;
+      color: white;
+      text-align: right;
+    }
+
+    #messages li.received {
+      float: left;
+      background-color: #ffffff;
+      color: #333;
+      text-align: left;
+    }
+
+    .message-sender {
+      font-weight: bold;
+      font-size: 0.8em;
+      margin-bottom: 4px;
+      opacity: 0.8;
+    }
+
+    #form-container {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid rgba(0, 0, 0, 0.05);
+      background: rgba(255, 255, 255, 0.5);
+    }
+
+    #form {
+      display: flex;
+      width: 100%;
+      gap: 0.75rem;
+    }
+
+    #input {
+      flex-grow: 1;
+      padding: 0.75rem 1.25rem;
+      border-radius: 50px;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      width: 100%;
+    }
+
+    #form button {
+      padding: 0.75rem 1.5rem;
+      border-radius: 50px;
+      border: none;
+      background-color: #28a745;
+      color: white;
+      font-weight: bold;
+      transition: background 0.2s ease;
+      white-space: nowrap;
+    }
+
+    #form button:hover {
+      background-color: #218838;
+    }
+
+    #chat-welcome {
+      text-align: center;
+      padding-top: 3rem;
+      color: #888;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-3 user-list">
+        <div class="user-list-header"><h5 class="mb-0">All Users</h5></div>
+        <div class="list-group list-group-flush"></div>
+      </div>
+      <div class="col-md-9 chat-area">
+        <div id="chat-header">Select a user to start chatting</div>
+        <ul id="messages">
+          <div id="chat-welcome"><p>Welcome, Admin!</p><p>Please select a user from the list.</p></div>
+        </ul>
+        <div id="form-container" style="display: none;">
+          <form id="form">
+            <input id="input" type="text" autocomplete="off" placeholder="Type your reply..." />
+            <button type="submit">Send</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io("/customer-service");
+    const userListEl = document.querySelector(".list-group");
+    const messagesEl = document.getElementById("messages");
+    const form = document.getElementById("form");
+    const input = document.getElementById("input");
+    const chatWelcomeEl = document.getElementById("chat-welcome");
+    const formContainer = document.getElementById("form-container");
+    const chatHeader = document.getElementById("chat-header");
+    let selectedUserId = null;
+    const onlineUsers = new Map();
+
+    function renderUserList() {
+      userListEl.innerHTML = '';
+      onlineUsers.forEach(user => userListEl.appendChild(createUserElement(user)));
+    }
+
+    socket.on("connect", () => console.log("Admin connected"));
+
+    socket.on("user list", (users) => {
+      users.forEach(user => onlineUsers.set(user.userId, user));
+      renderUserList();
+    });
+
+    socket.on("user connected", (user) => {
+      onlineUsers.set(user.userId, user);
+      renderUserList();
+    });
+
+    socket.on("user disconnected", ({ userId }) => {
+      onlineUsers.delete(userId);
+      renderUserList();
+      if (selectedUserId === userId) resetChatView();
+    });
+
+    socket.on("chat history", (history) => {
+      messagesEl.innerHTML = '';
+      chatWelcomeEl.style.display = 'none';
+      history.forEach(appendMessage);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    });
+
+    socket.on("private message", (msg) => {
+      if (!msg || !msg.sender) return;
+      const userInvolvedId = msg.senderModel === 'User' ? msg.sender._id : msg.receiver?._id;
+      if (userInvolvedId === selectedUserId) {
+        appendMessage(msg);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      } else if (msg.senderModel === 'User') {
+        const userElement = document.getElementById(`user-${userInvolvedId}`);
+        if (userElement) {
+          let badge = userElement.querySelector('.badge');
+          if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'badge bg-danger rounded-pill ms-auto';
+            userElement.appendChild(badge);
+          }
+          badge.textContent = (parseInt(badge.textContent) || 0) + 1;
+        }
+      }
+    });
+
+    function createUserElement(user) {
+      const item = document.createElement("a");
+      item.href = "#";
+      item.className = "list-group-item list-group-item-action";
+      item.id = `user-${user.userId}`;
+      const name = user.username || `User (${user.userId.slice(-4)})`;
+      item.innerHTML = `<span>${name}</span>`;
+      item.addEventListener("click", (e) => {
+        e.preventDefault();
+        document.querySelectorAll('.list-group-item').forEach(el => el.classList.remove('active'));
+        item.classList.add('active');
+        selectedUserId = user.userId;
+        chatHeader.textContent = `Chatting with ${name}`;
+        formContainer.style.display = 'flex';
+        socket.emit("load chat history", { targetUserId: selectedUserId });
+        const badge = item.querySelector('.badge');
+        if (badge) badge.remove();
+      });
+      return item;
+    }
+
+    function appendMessage(msg) {
+      const li = document.createElement("li");
+      li.innerHTML = `<div class="message-sender">${msg.sender.username}</div><div>${msg.content}</div>`;
+      if (msg.senderModel === 'Admin') {
+        li.classList.add("sent");
+      } else {
+        li.classList.add("received");
+      }
+      messagesEl.appendChild(li);
+    }
+
+    function resetChatView() {
+      selectedUserId = null;
+      chatHeader.textContent = 'Select a user to start chatting';
+      messagesEl.innerHTML = '';
+      chatWelcomeEl.style.display = 'block';
+      formContainer.style.display = 'none';
+    }
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const content = input.value.trim();
+      if (content && selectedUserId) {
+        socket.emit("private message", { receiverId: selectedUserId, content });
+        input.value = "";
+      }
+    });
+  </script>
+</body>
+</html>

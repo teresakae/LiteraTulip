@@ -4,8 +4,7 @@ const Product = require("../models/produk");
 const submitTransaksi = async (req, res) => {
   try {
     const cartItems = req.body.cartItems;
-    const userId = req.user ? req.user.id : null;
-    console.log("Logged-in User ID:", userId);
+    const userId = req.user ? req.user._id : null;
 
     if (!cartItems || cartItems.length === 0) {
       return res
@@ -85,9 +84,10 @@ const submitTransaksi = async (req, res) => {
 
 const getAllTransaksi = async (req, res) => {
   try {
-    const transaksi = await Transaksi.find()
-      .populate("user")
-      .populate("items.produk");
+    const transaksi = await Transaksi.find({})
+      .populate("user", "username")
+      .populate("items.produk", "nama")
+      .sort({ tanggalTransaksi: -1 });
     res.status(200).json(transaksi);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -195,14 +195,15 @@ const getTransaksiById = async (req, res) => {
   try {
     const transaksiId = req.params.id;
     const transaksi = await Transaksi.findById(transaksiId)
-      .populate("user")
-      .populate("items.produk");
+      .populate("user", "username")
+      .populate("items.produk", "nama");
     if (!transaksi) {
       return res.status(404).json({ message: "Transaksi tidak ditemukan." });
     }
     res.status(200).json(transaksi);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("SERVER ERROR in getTransaksiById:", err);
+    res.status(500).json({ message: "Server error while fetching transaction details.", error: err.message });
   }
 };
 
@@ -235,84 +236,54 @@ const updateTransactionPayment = async (req, res) => {
 const updateTransactionStatus = async (req, res) => {
   try {
     const transaksiId = req.params.id;
-    const { orderStatus } = req.body;
+    const { orderStatus: newStatus } = req.body;
 
-    const transaksi = await Transaksi.findByIdAndUpdate(
-      transaksiId,
-      { orderStatus },
-      { new: true }
-    );
+    if (!newStatus) {
+      return res.status(400).json({ message: "No new status provided." });
+    }
 
-    if (!transaksi) {
+    const transaction = await Transaksi.findById(transaksiId);
+    if (!transaction) {
       return res.status(404).json({ message: "Transaksi tidak ditemukan." });
     }
 
+    const currentStatus = transaction.orderStatus;
+    const allowedTransitions = {
+      'Pending Payment': ['Paid'],
+      'Paid': ['Paid', 'Being Processed', 'In Delivery', 'Delivered'],
+      'Being Processed': ['Being Processed', 'In Delivery', 'Delivered'],
+      'In Delivery': ['In Delivery', 'Delivered'],
+      'Delivered': ['Delivered']
+    };
+    
+    if (!allowedTransitions[currentStatus] || !allowedTransitions[currentStatus].includes(newStatus)) {
+      return res.status(400).json({ message: `Cannot change status from '${currentStatus}' to '${newStatus}'.` });
+    }
+
+    transaction.orderStatus = newStatus;
+    await transaction.save();
+
     res.status(200).json({
       message: "Transaction status updated successfully.",
-      transaction: transaksi,
+      transaction: transaction,
     });
   } catch (err) {
+    console.error("Error in updateTransactionStatus:", err);
     res.status(500).json({ error: err.message });
   }
 };
 
-async function loadTransactions() {
-  try {
-    const res = await fetch("/api/transaksi");
-    const data = await res.json();
-
-    const tableBody = document.getElementById("transactionTableBody");
-    tableBody.innerHTML = "";
-
-    if (!data.length) {
-      tableBody.innerHTML =
-        '<tr><td colspan="4">No transactions found.</td></tr>';
-      return;
-    }
-
-    data.forEach((tx) => {
-      const row = document.createElement("tr");
-
-      const date = tx.createdAt ? new Date(tx.createdAt).toLocaleString() : "-";
-
-      let statusHTML = tx.orderStatus || "-";
-      if (statusHTML === "Pending Payment") {
-        statusHTML = `<a href="payment.html?transactionId=${tx._id}">${statusHTML}</a>`;
-      }
-
-      row.innerHTML = `
-          <td>${tx._id}</td>
-          <td>${tx.paymentOption || "-"}</td>
-          <td>${statusHTML}</td>
-          <td>${date}</td>
-        `;
-      tableBody.appendChild(row);
-    });
-  } catch (err) {
-    console.error(err);
-    document.getElementById("transactionTableBody").innerHTML =
-      '<tr><td colspan="4">Error loading transactions.</td></tr>';
-  }
-}
-
 const getUserTransaksi = async (req, res) => {
   try {
-    const userId = req.user ? req.user.id : null;
-
+    const userId = req.user ? req.user._id : null;
     if (!userId) {
       return res.status(400).json({ message: "User is not logged in." });
     }
-
     const transaksi = await Transaksi.find({ user: userId })
-      .populate("user")
-      .populate("items.produk");
-
-    if (transaksi.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No transactions found for this user." });
-    }
-
+      .populate("user", "username")
+      .populate("items.produk", "nama")
+      .sort({ tanggalTransaksi: -1 });
+      
     res.status(200).json(transaksi);
   } catch (err) {
     res.status(500).json({ error: err.message });

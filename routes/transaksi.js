@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const transaksiController = require('../controllers/transaksi');
 
+// Define routes for transactions
 router.post('/transaksi/submit', transaksiController.submitTransaksi);
 router.get('/transaksi', transaksiController.getAllTransaksi);
 router.get('/transaksi/user', transaksiController.getUserTransaksi); 

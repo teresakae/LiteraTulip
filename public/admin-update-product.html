@@ -10,7 +10,6 @@
         background-color: #f8f0e3;
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
       }
-
       .container {
         margin-top: 50px;
         background-color: #fff;
@@ -18,17 +17,18 @@
         border-radius: 10px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       }
-
       h1 {
         margin-bottom: 30px;
         color: #e91e63;
         font-size: 2.5em;
       }
 
+      /* --- START: CSS BUTTON CHANGES --- */
+      /* Update Button (Green) */
       .btn-custom {
         padding: 15px 30px;
         font-size: 18px;
-        background-color: #e77471;
+        background-color: #4CAF50; /* Green */
         color: white;
         border: none;
         border-radius: 10px;
@@ -36,16 +36,15 @@
         transition: background-color 0.3s ease, transform 0.3s ease;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       }
-
       .btn-custom:hover {
         background-color: #45a049;
         color: white;
         transform: translateY(-3px);
         box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
       }
-
+      /* Delete Button (Jambu/Pinkish-Red) */
       .btn-delete {
-        background-color: #dc3545;
+        background-color: #e77471; /* Jambu color */
         color: #fff;
         border: none;
         padding: 15px 30px;
@@ -55,13 +54,13 @@
         transition: background-color 0.3s ease, transform 0.3s ease;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       }
-
       .btn-delete:hover {
-        background-color: #c82333;
+        background-color: #d66562;
         color: white;
         transform: translateY(-3px);
         box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
       }
+      /* --- END: CSS BUTTON CHANGES --- */
 
       .alert-custom {
         display: none;
@@ -73,22 +72,14 @@
         width: 80%;
         max-width: 400px;
       }
-
-      .credit {
-        font-size: 1em;
-        color: #776e65;
-        margin-top: 20px;
-        text-align: center;
-      }
     </style>
   </head>
 
   <body>
     <div class="container">
       <h1 class="text-center"><strong>Update Product</strong></h1>
-
-      <form id="updateProductForm" class="row g-4">
-        <div class="col-md-6">
+      <form id="updateProductForm" class="row g-4" enctype="multipart/form-data">
+        <div class="col-md-12">
           <label for="existingProducts" class="form-label">Select Product to Update/Delete:</label>
           <select id="existingProducts" class="form-select" required>
             <option value="" disabled selected>Select a product</option>
@@ -96,15 +87,19 @@
         </div>
         <div class="col-md-6">
           <label for="productName" class="form-label">Product Name:</label>
-          <input type="text" id="productName" class="form-control" required />
+          <input type="text" id="productName" name="nama" class="form-control" required />
         </div>
         <div class="col-md-6">
           <label for="productPrice" class="form-label">Product Price:</label>
-          <input type="number" id="productPrice" class="form-control" required />
+          <input type="number" id="productPrice" name="harga" class="form-control" required />
         </div>
         <div class="col-md-6">
           <label for="productStock" class="form-label">Product Stock:</label>
-          <input type="number" id="productStock" class="form-control" required />
+          <input type="number" id="productStock" name="stok" class="form-control" required />
+        </div>
+        <div class="col-md-6">
+          <label for="productImage" class="form-label">Upload New Image (Optional):</label>
+          <input type="file" id="productImage" name="productImage" class="form-control" />
         </div>
         <div class="col-12">
           <button type="submit" class="btn btn-custom w-100">Update Product</button>
@@ -112,13 +107,12 @@
         <div class="col-12">
           <button type="button" id="deleteProductButton" class="btn btn-delete w-100">Delete Product</button>
         </div>
-        <br />
-        <div class="text-center">
+        <div class="text-center mt-3">
           <a href="admin-dashboard.html" class="btn btn-secondary btn-back">Back to Home</a>
         </div>
       </form>
-      <div id="errorMessage" class="text-danger" style="display: none"></div>
     </div>
+
     <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -134,130 +128,124 @@
         </div>
       </div>
     </div>
+    
     <div id="alertMessage" class="alert alert-custom" role="alert"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-      const existingProductsDropdown = document.getElementById("existingProducts");
-      const updateProductForm = document.getElementById("updateProductForm");
-      const productNameInput = document.getElementById("productName");
-      const productPriceInput = document.getElementById("productPrice");
-      const productStockInput = document.getElementById("productStock");
-      const errorMessage = document.getElementById("errorMessage");
-      const deleteProductButton = document.getElementById("deleteProductButton");
+        const existingProductsDropdown = document.getElementById("existingProducts");
+        const updateProductForm = document.getElementById("updateProductForm");
+        const productNameInput = document.getElementById("productName");
+        const productPriceInput = document.getElementById("productPrice");
+        const productStockInput = document.getElementById("productStock");
+        const deleteProductButton = document.getElementById("deleteProductButton");
+        const deleteModal = new bootstrap.Modal(document.getElementById("deleteConfirmModal"));
+        const alertMessage = document.getElementById("alertMessage");
 
-      const deleteModal = new bootstrap.Modal(document.getElementById("deleteConfirmModal"));
-
-      const alertMessage = document.getElementById("alertMessage");
-
-      async function fetchExistingProducts() {
-        try {
-          const response = await fetch("http://localhost:3000/api/product");
-          const products = await response.json();
-          existingProductsDropdown.innerHTML = '<option value="" disabled selected>Select a product</option>';
-          products.forEach((product) => {
-            const option = document.createElement("option");
-            option.value = product._id;
-            option.textContent = `${product.nama} - Rp. ${product.harga}`;
-            existingProductsDropdown.appendChild(option);
-          });
-        } catch (error) {
-          showAlert("Error fetching products.", "danger");
+        async function fetchExistingProducts() {
+            try {
+                const response = await fetch("http://localhost:3000/api/products");
+                const products = await response.json();
+                const currentlySelected = existingProductsDropdown.value;
+                existingProductsDropdown.innerHTML = '<option value="" disabled selected>Select a product</option>';
+                products.forEach((product) => {
+                    const option = document.createElement("option");
+                    option.value = product._id;
+                    option.textContent = product.nama;
+                    existingProductsDropdown.appendChild(option);
+                });
+                if (currentlySelected) {
+                    existingProductsDropdown.value = currentlySelected;
+                }
+            } catch (error) {
+                showAlert("Error fetching products.", "danger");
+            }
         }
-      }
 
-      document.addEventListener("DOMContentLoaded", fetchExistingProducts);
+        document.addEventListener("DOMContentLoaded", fetchExistingProducts);
 
-      existingProductsDropdown.addEventListener("change", async (event) => {
-        const productId = event.target.value;
-        if (productId) {
-          try {
-            const response = await fetch(`http://localhost:3000/api/product/${productId}`);
-            const product = await response.json();
-            productNameInput.value = product.nama;
-            productPriceInput.value = product.harga;
-            productStockInput.value = product.stok;
-          } catch (error) {
-            showAlert("Error fetching product details.", "danger");
-          }
-        } else {
-          productNameInput.value = "";
-          productPriceInput.value = "";
-          productStockInput.value = "";
+        existingProductsDropdown.addEventListener("change", async (event) => {
+            const productId = event.target.value;
+            if (productId) {
+                try {
+                    const response = await fetch(`http://localhost:3000/api/products/${productId}`);
+                    const product = await response.json();
+                    productNameInput.value = product.nama;
+                    productPriceInput.value = product.harga;
+                    productStockInput.value = product.stok;
+                } catch (error) {
+                    showAlert("Error fetching product details.", "danger");
+                }
+            } else {
+                updateProductForm.reset();
+            }
+        });
+
+        updateProductForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const productId = existingProductsDropdown.value;
+            if (!productId) {
+                showAlert("Please select a product to update.", "warning");
+                return;
+            }
+
+            const formData = new FormData(updateProductForm);
+            
+            try {
+                const response = await fetch(`http://localhost:3000/api/products/${productId}`, {
+                    method: "PUT",
+                    body: formData,
+                });
+
+                if (response.ok) {
+                    showAlert("Product updated successfully!", "success");
+                    fetchExistingProducts(); 
+                } else {
+                    const errorData = await response.json();
+                    showAlert(`Failed to update product: ${errorData.message}`, "danger");
+                }
+            } catch (error) {
+                showAlert(`Error: ${error.message}`, "danger");
+            }
+        });
+
+        deleteProductButton.addEventListener("click", () => {
+            if (!existingProductsDropdown.value) {
+                showAlert("Please select a product to delete.", "danger");
+                return;
+            }
+            deleteModal.show();
+        });
+
+        document.getElementById("confirmDelete").addEventListener("click", async () => {
+            const productId = existingProductsDropdown.value;
+            try {
+                const response = await fetch(`http://localhost:3000/api/products/${productId}`, {
+                    method: "DELETE",
+                });
+
+                if (response.ok) {
+                    updateProductForm.reset();
+                    fetchExistingProducts();
+                    deleteModal.hide();
+                    showAlert("Product deleted successfully!", "success");
+                } else {
+                    const errorData = await response.json();
+                    showAlert(`Failed to delete product: ${errorData.message}`, "danger");
+                }
+            } catch (error) {
+                showAlert(`Error: ${error.message}`, "danger");
+            }
+        });
+
+        function showAlert(message, type) {
+            alertMessage.textContent = message;
+            alertMessage.className = `alert alert-${type} alert-custom`;
+            alertMessage.style.display = "block";
+            setTimeout(() => {
+                alertMessage.style.display = "none";
+            }, 5000);
         }
-      });
-
-      updateProductForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const productId = existingProductsDropdown.value;
-        const updatedProduct = {
-          nama: productNameInput.value,
-          harga: parseFloat(productPriceInput.value),
-          stok: parseInt(productStockInput.value, 10),
-        };
-
-        try {
-          const response = await fetch(`http://localhost:3000/api/product/${productId}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(updatedProduct),
-          });
-
-          if (response.ok) {
-            fetchExistingProducts();
-            productNameInput.value = "";
-            productPriceInput.value = "";
-            productStockInput.value = "";
-            showAlert("Product updated successfully!", "success");
-          } else {
-            const errorData = await response.json();
-            showAlert(`Failed to update product: ${errorData.message}`, "danger");
-          }
-        } catch (error) {
-          showAlert(`Error: ${error.message}`, "danger");
-        }
-      });
-
-      deleteProductButton.addEventListener("click", () => {
-        if (!existingProductsDropdown.value) {
-          showAlert("Please select a product to delete.", "danger");
-          return;
-        }
-        deleteModal.show();
-      });
-
-      document.getElementById("confirmDelete").addEventListener("click", async () => {
-        const productId = existingProductsDropdown.value;
-        try {
-          const response = await fetch(`http://localhost:3000/api/product/${productId}`, {
-            method: "DELETE",
-          });
-
-          if (response.ok) {
-            fetchExistingProducts();
-            productNameInput.value = "";
-            productPriceInput.value = "";
-            productStockInput.value = "";
-            deleteModal.hide();
-            showAlert("Product deleted successfully!", "success");
-          } else {
-            const errorData = await response.json();
-            showAlert(`Failed to delete product: ${errorData.message}`, "danger");
-          }
-        } catch (error) {
-          showAlert(`Error: ${error.message}`, "danger");
-        }
-      });
-
-      function showAlert(message, type) {
-        alertMessage.textContent = message;
-        alertMessage.className = `alert alert-${type} alert-custom`;
-        alertMessage.style.display = "block";
-        setTimeout(() => {
-          alertMessage.style.display = "none";
-        }, 5000);
-      }
     </script>
-    <div class="credit">© Regu Tulip_ARKA (Alexa, Runi, Kae, Andrew)</div>
   </body>
 </html>

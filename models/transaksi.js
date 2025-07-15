@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+
 const transaksiSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     tanggalTransaksi: { type: Date, default: Date.now },
@@ -11,7 +12,12 @@ const transaksiSchema = new mongoose.Schema({
     }],
     totalTransaksi: { type: Number, required: true, default: 0 },
     totalDiscountTransaksi: { type: Number, default: 0 },
-    paymentOption: { type: String }, // New field for payment option
-    orderStatus: { type: String, default: 'Pending Payment' }, // New field for order status
+    paymentOption: { type: String },
+    orderStatus: { 
+        type: String, 
+        enum: ['Pending Payment', 'Paid', 'Being Processed', 'In Delivery', 'Delivered'],
+        default: 'Pending Payment' 
+    },
 });
+
 module.exports = mongoose.model('Transactions', transaksiSchema);

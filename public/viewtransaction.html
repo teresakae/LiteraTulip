@@ -5,133 +5,103 @@
     <title>View Transactions</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" />
     <style>
-      body {
-        background-color: #f8f0e3;
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      }
-
-      .container {
-        margin-top: 50px;
-        background-color: #fff;
-        padding: 30px;
-        border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      }
-
-      h1 {
-        margin-bottom: 30px;
-        color: #e91e63;
-        font-size: 2.5em;
-      }
-
-      .table th {
-        background-color: #f1f1f1;
-      }
-
-      .product-list {
-        list-style: none;
-        padding-left: 0;
-        margin-bottom: 0;
-      }
-
-      .product-list-item {
-        margin-bottom: 4px;
-      }
-
-      .btn-back {
-        padding: 15px 30px;
-        font-size: 18px;
-        background-color: #e77471;
-        color: white;
-        border: none;
-        border-radius: 10px;
-        cursor: pointer;
-        transition: background-color 0.3s ease, transform 0.3s ease;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      }
-
-      .credit {
-        font-size: 1em;
-        color: #776e65;
-        margin-top: 20px;
-        text-align: center;
-      }
+      body { background-color: #f8f0e3; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+      .container { margin-top: 50px; background-color: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
+      h1 { margin-bottom: 30px; color: #e91e63; font-size: 2.5em; font-weight: bold; }
+      .table th { background-color: #f1f1f1; }
+      .product-list { list-style: none; padding-left: 0; margin-bottom: 0; }
+      #transactionTableBody td:nth-child(2) { text-align: left; }
+      .btn-back { background-color: #e77471; color: white; border: none; }
+      .credit { color: #776e65; margin-top: 20px; text-align: center; }
+      .status-badge { padding: 6px 12px; border-radius: 6px; font-weight: 500; display: inline-block; min-width: 130px; }
+      .status-link { color: inherit !important; text-decoration: none; }
+      .status-link:hover { text-decoration: underline; }
+      .status-pending { background-color: #FDFD96; color: #555; }
+      .status-paid { background-color: #A7D7C5; color: #333; }
+      .status-processing { background-color: #E3B778; color: #333; }
+      .status-delivery { background-color: #E6DDCB; color: #333; }
+      .status-delivered { background-color: #6A994E; color: white; }
     </style>
   </head>
   <body>
     <div class="container">
       <h1 class="text-center"><strong>Your Transactions</strong></h1>
-      <table class="table table-bordered text-center">
+      <table class="table table-bordered text-center align-middle">
         <thead>
           <tr>
             <th>Transaction ID</th>
             <th>Products</th>
+            <th>Total Amount</th>
             <th>Payment Method</th>
             <th>Status</th>
             <th>Date</th>
           </tr>
         </thead>
         <tbody id="transactionTableBody">
-          <tr>
-            <td colspan="5">Loading...</td>
-          </tr>
+          <tr><td colspan="6">Loading...</td></tr>
         </tbody>
       </table>
-      <div class="text-center">
-        <a href="home.html" class="btn btn-secondary btn-back">Back to Home</a>
+      <div class="text-center mt-4">
+        <a href="home.html" class="btn btn-back">Back to Home</a>
       </div>
     </div>
 
     <script>
+      function formatNumber(num) {
+        return num.toLocaleString("id-ID", {
+          style: "currency",
+          currency: "IDR",
+          minimumFractionDigits: 0,
+        });
+      }
+
+      function getStatusClass(status) {
+        switch (status) {
+          case 'Paid': return 'status-paid';
+          case 'Being Processed': return 'status-processing';
+          case 'In Delivery': return 'status-delivery';
+          case 'Delivered': return 'status-delivered';
+          default: return 'status-pending';
+        }
+      }
+
       async function loadTransactions() {
         try {
           const res = await fetch("/api/transaksi/user");
           const data = await res.json();
-
           const tableBody = document.getElementById("transactionTableBody");
           tableBody.innerHTML = "";
 
           if (!data.length) {
-            tableBody.innerHTML = '<tr><td colspan="5">No transactions found.</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="6">No transactions found.</td></tr>';
             return;
           }
 
           data.forEach((tx) => {
             const row = document.createElement("tr");
-
-            let formattedDate = "-";
-            if (tx.tanggalTransaksi) {
-              const parsedDate = new Date(tx.tanggalTransaksi);
-              formattedDate = isNaN(parsedDate.getTime()) ? "-" : parsedDate.toLocaleDateString();
+            const formattedDate = new Date(tx.tanggalTransaksi).toLocaleDateString();
+            
+            const statusClass = getStatusClass(tx.orderStatus);
+            let statusHTML;
+            if (tx.orderStatus === "Pending Payment") {
+              statusHTML = `<a href="/payment.html?transactionId=${tx._id}" class="status-badge ${statusClass} status-link">${tx.orderStatus}</a>`;
+            } else {
+              statusHTML = `<span class="status-badge ${statusClass}">${tx.orderStatus || "-"}</span>`;
             }
 
-            const productList =
-              tx.items && tx.items.length
-                ? `<ul class="product-list">
-                            ${tx.items
-                              .map(
-                                (item) => `
-                                <li class="product-list-item">${item.produk?.nama || "Unnamed Product"} (x${item.quantity})</li>
-                            `
-                              )
-                              .join("")}
-                           </ul>`
-                : "N/A";
-
             row.innerHTML = `
-                        <td>${tx._id}</td>
-                        <td>${productList}</td>
-                        <td>${tx.paymentOption || "-"}</td>
-                        <td>
-                            ${tx.orderStatus === "Pending Payment" ? `<a href="/payment.html?transactionId=${tx._id}">${tx.orderStatus}</a>` : tx.orderStatus || "-"}
-                        </td>
-                        <td>${formattedDate}</td>
-                    `;
+              <td><small>${tx._id}</small></td>
+              <td>${tx.items && tx.items.length ? `<ul class="product-list">${tx.items.map(item => `<li>${item.produk?.nama || "Unnamed Product"} (x${item.quantity})</li>`).join("")}</ul>` : "N/A"}</td>
+              <td><strong>${formatNumber(tx.totalTransaksi)}</strong></td>
+              <td>${tx.paymentOption || "-"}</td>
+              <td>${statusHTML}</td>
+              <td>${formattedDate}</td>
+            `;
             tableBody.appendChild(row);
           });
         } catch (err) {
           console.error(err);
-          document.getElementById("transactionTableBody").innerHTML = '<tr><td colspan="5">Error loading transactions.</td></tr>';
+          document.getElementById("transactionTableBody").innerHTML = '<tr><td colspan="6">Error loading transactions.</td></tr>';
         }
       }
       loadTransactions();
